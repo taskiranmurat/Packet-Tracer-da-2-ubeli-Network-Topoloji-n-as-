@@ -84,6 +84,71 @@ Hastanenin operasyonel sürekliliğini sağlamak adına çift ISP bağlantılı 
 11. PAT ve ACL yapılandırılacak
 
 
+### 1) Network Dizaynı oluşturuldu. Bütün bağlantılar yapıldı.
+
+<img width="1327" height="661" alt="image" src="https://github.com/user-attachments/assets/50ba0c2d-1e52-417f-a77d-969ec7951318" />
+
+
+### 2) Switchlere user ve global konfigürasyonlara parola koyma ve ssh yapılandırılma
+
+```bash
+enable 
+conf t
+hostname POL-SW
+enable password taskiran
+banner motd #!!!Yetkisiz Kişiler Giremez!!!#
+no ip domain lookup
+line console 0
+password taskiran
+login
+exit
+service password-encrytion
+```
+#### Parola ve Banner Ekleme
+
+* **enable secret taskiran:** Komutu ile global konfigürasyona girişte parola koyuldu.
+* **banner motd:** Komutu ile banner yazıldı. 
+* **line console 0:** Komutu konsol bağlantısı yapıldığında parola koyuldu.
+* **no ip domain lookup:** Yanlış komut girildiğinde cihazın DNS sunucusuna isim sorgusu göndermesini engelleyen bir komut.
+* **service password-encrytion:** running-config de clear-text olarak görünen tüm şifreleri şifrelenmiş bir formata dönüştürür.
+* Bu komutlar ile sadece bütün access switchlere parola koyuldu sadece hostname değiştirilerek komutlara kopyala yapıştır yapıldı.
+* Multilayer swithlere de aynı işlemi yapıyoruz bir de ssh ekliyoruz
+
+
+#### SSH yapılandırılması:
+
+```bash
+ip domain-name taskiran.com
+username admin password taskiran
+crypto key generate rsa
+1024 
+line vty 0 4
+login local
+transport input ssh
+exit
+
+do wri
+```
+
+* **ip domain-name taskiran.com:** SSH için bir şifreleme anahtarı (key) oluşturmadan önce cihazın bir domain adına ihtiyacı vardır. Bu komutla cihaza bir kimlik alanı tanımlarsın.
+* **username admin password taskiran:** Cihaza uzaktan bağlanacak kişi için yerel bir kullanıcı adı ve şifre oluşturur.
+* **crypto key generate rsa:** Şifreleme için kullanılacak olan RSA anahtar çiftini oluşturur.
+* **1024:** RSA anahtarının uzunluğunu bit cinsinden belirler. 
+* **line vty 0 4:** Cihazın aynı anda 5 farklı uzak bağlantı (0'dan 4'e kadar hat) kabul edebileceğini belirtir.
+* **login local:** Cihaza bağlanmaya çalışan kişiye "Seni tanımam için cihazın üzerinde tanımlı olan kullanıcı listesine (az önce oluşturduğumuz admin kullanıcısı gibi) bak" der.
+* **transport input ssh:** Bu hatta sadece SSH bağlantısına izin verir. Telnet gibi diğer protokolleri kapattığı için güvenliği maksimize eder.
+
+Bütün multilayer switchlere ve routerlara aynı komutları yazıldı sadece hostnameler değiştirildi.
+
+
+
+
+
+
+
+
+
+
 
 
 
