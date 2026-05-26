@@ -140,22 +140,83 @@ do wri
 
 Bütün multilayer switchlere ve routerlara aynı komutları yazıldı sadece hostnameler değiştirildi.
 
+### 3) Vlanları oluşturma,portlara vlanlari atama Multilayer switch ile access switch arası trunk yapılandırma
+
+#### Vlan Nedir?
+
+Bir fiziksel switch üzerindeki ağ portlarını mantıksal olarak küçük parçalara bölerek birbirinden tamamen bağımsız sanal ağlar oluşturma teknolojisidir. Amaç güvenliği artırmak.
 
 
+#### Vlan Oluşturma ve Portlara Atama
+
+```bash
+Vlan oluşturma;
+	vlan 10	
+	name Poliklinik
+```
+Önce vlan sayısı yazılır ve ardından da vlanımıza isim verilir vlan oluşturma bu şekildedir.
+
+```bash
+	Acces Switchlere Vlan Atama;
+	int range fa0/3-24
+	switchport mode access
+	swicthport access vlan 10
+
+```
+
+* **int range fa0/3-24:**
+Switch üzerindeki FastEthernet 0/3 ile FastEthernet 0/24 arasındaki tüm portları (toplam 22 adet portu) tek seferde topluca seçmeyi sağlar.
+
+* **switchport mode access:**
+Seçilen bu portların çalışma modunu "Access (Erişim)" olarak belirler. Access portlar, sadece tek bir VLAN'a ait trafiği taşır ve bilgisayar, yazıcı, IP telefon veya sunucu gibi doğrudan son kullanıcı cihazlarının (end cihazlar) bağlanacağı portlar için kullanılır.
+
+* **switchport access vlan 10:***
+Seçilen ve access moduna alınan bu portların tamamını doğrudan VLAN 10 ağına üye yapar ve bağlar. Bu adımdan sonra, bu portlara takılan tüm cihazlar artık mantıksal olarak sadece VLAN 10 ağının birer parçası haline gelir.
+
+#### Trunk Nedir?
+Birden fazla VLAN'a ait ağ trafiğinin, tek bir fiziksel hat üzerinden switchler veya routerlar arasında taşınmasını sağlayan bağlantı türüdür. Amaç Her VLAN için switchler arasına ayrı ayrı kablo çekme maliyetini ortadan kaldırır. Trunk hattından geçen her veri paketine 802.1Q adı verilen bir protokol ile "bu veri VLAN 10'a aittir" veya "bu veri VLAN 20'ye aittir" şeklinde bir etiket (tag) eklenir. Karşıdaki switch bu etikete bakarak veriyi doğru VLAN'a ulaştırır. 
+
+```bash
+ Trunk oluşturma;
+	int range fa0/1-2
+	swicthport mode trunk
+```
+* **switchport mode trunk:***
+Seçilen bu portların çalışma modunu "Trunk" olarak belirler. Bu komutla birlikte, bu portlar üzerinden artık sadece tek bir departmanın değil, ağdaki tüm VLAN'ların (VLAN 10, VLAN 20, vb.) trafiğinin tek bir kablo üzerinden etiketlenerek (802.1Q) taşınması sağlanır. Switch'ler arası veya switch-router arası bağlantılarda kullanılır.
 
 
+<img width="497" height="282" alt="image" src="https://github.com/user-attachments/assets/cc43864c-4531-4e07-a76b-f82fe7adafe4" />
+
+Topoloji de bu şekilde vlan oluşturuldu, switch ve router arasu trunk yapılandırıldı ve son kullanıcılara bakan tarafa vlanlar portlara atandı.Bu sadece merkez tarafındaki lab swithte yapılandırıldı diğer switchler de aynı bu şekilde yapılandırılır sadece isimleri ve vlan sayıları değiştirilir.
 
 
+<img width="577" height="266" alt="image" src="https://github.com/user-attachments/assets/da65789c-c4dc-4bc1-ad68-6836c28a2a3c" />
+
+Multilayer switchlere de vlanlar oluşuturulup trunk bağlantısı yapılandırılmıştır. Diğer merkez multilayer switchte de aynısı yapılandırıldı. Şube tarafındaki multilayer switchlere de aynı şekilde yapılandırıldı oradaki vlan 90-140 arası trunk yapıldı.
+
+### 3) Ip subnetting Planlama
+
+Networkümüz **192.168.100.0** bunu gereksinimlere göre böleceğiz.
+
+* Merkez tarafında en az 60 kullanıcı olacak o yüzden /26 subnet mask kullanıldı.(2^6=64)
+* Şube tarafında en az 30 kullanıcı olacak o yüzden /27 subnet mask kullanıldı.(2^5=32)
+* Router-Router arası point to point olduğu /30 subnet mask kullanılır.
+* Router- l3-Switch de aynı şekilde /30 subnet mask kullanılır.
 
 
+#### İstanbul(Merkez) Hastanesi
 
+Merkez tarafındaki ip planlaması aşağıdaki gibidir. 
 
-
-
-
-
-
-
+| Departmanlar | Network Adresleri | Subnet Mask | Host Adres Aralığı | Broadcast Adresleri |
+| :--- | :--- | :--- | :--- | :--- |
+| Poliklinik | 192.168.100.0 | 255.255.255.192/26 | 192.168.100.1-<br>192.168.100.62 | 192.168.100.63 |
+| Laboratuvar | 192.168.100.64 | 255.255.255.192/26 | 192.168.100.64-<br>192.168.100.126 | 192.168.100.127 |
+| Medikal Cİhazlar | 192.168.100.128 | 255.255.255.192/26 | 192.168.100.129-<br>192.168.100.190 | 192.168.100.191 |
+| Yönetim/Finans | 192.168.100.192 | 255.255.255.192/26 | 192.168.100.193-<br>192.168.100.254 | 192.168.100.255 |
+| IT | 192.168.101.0 | 255.255.255.192/26 | 192.168.101.1-<br>192.168.101.62 | 192.168.101.63 |
+| Hasta Kayıt | 192.168.101.64 | 255.255.255.192/26 | 192.168.101.64-<br>192.168.101.126 | 192.168.101.127 |
+| Misafir Bekleme Alanı | 192.168.101.128 | 255.255.255.192/26 | 192.168.101.129-<br>192.168.101.190 | 192.168.101.191 |
 
 
 
