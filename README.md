@@ -111,8 +111,8 @@ service password-encrytion
 * **line console 0:** Komutu konsol bağlantısı yapıldığında parola koyuldu.
 * **no ip domain lookup:** Yanlış komut girildiğinde cihazın DNS sunucusuna isim sorgusu göndermesini engelleyen bir komut.
 * **service password-encrytion:** running-config de clear-text olarak görünen tüm şifreleri şifrelenmiş bir formata dönüştürür.
-* Bu komutlar ile sadece bütün access switchlere parola koyuldu sadece hostname değiştirilerek komutlara kopyala yapıştır yapıldı.
-* Multilayer swithlere de aynı işlemi yapıyoruz bir de ssh ekliyoruz
+Bu komutlar ile sadece bütün access switchlere parola koyuldu sadece hostname değiştirilerek komutlara kopyala yapıştır yapıldı.
+ Multilayer swithlere de aynı işlemi yapıyoruz bir de ssh ekliyoruz
 
 
 #### SSH yapılandırılması:
