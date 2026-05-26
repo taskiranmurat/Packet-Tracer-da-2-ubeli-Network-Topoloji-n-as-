@@ -1,4 +1,4 @@
-# Packet-Tracer-da-2-ubeli-Network-Topoloji-n-as-
+# Packet-Tracer-da-2-Şubeli-Network-Topoloji-İnşası
 
 
 ### Proje Amacı
@@ -194,7 +194,7 @@ Topoloji de bu şekilde vlan oluşturuldu, switch ve router arasu trunk yapılan
 
 Multilayer switchlere de vlanlar oluşuturulup trunk bağlantısı yapılandırılmıştır. Diğer merkez multilayer switchte de aynısı yapılandırıldı. Şube tarafındaki multilayer switchlere de aynı şekilde yapılandırıldı oradaki vlan 90-140 arası trunk yapıldı.
 
-### 3) Ip subnetting Planlama
+### 4) Ip subnetting Planlama
 
 Networkümüz **192.168.100.0** bunu gereksinimlere göre böleceğiz.
 
@@ -206,7 +206,7 @@ Networkümüz **192.168.100.0** bunu gereksinimlere göre böleceğiz.
 
 #### İstanbul(Merkez) Hastanesi
 
-Merkez tarafındaki ip planlaması aşağıdaki gibidir. 
+Merkez tarafındaki ip planlaması aşağıdaki gibidir. 60 kullanıcılı olarak /27 subnetmask kullanılmıştır.
 
 | Departmanlar | Network Adresleri | Subnet Mask | Host Adres Aralığı | Broadcast Adresleri |
 | :--- | :--- | :--- | :--- | :--- |
@@ -217,6 +217,83 @@ Merkez tarafındaki ip planlaması aşağıdaki gibidir.
 | IT | 192.168.101.0 | 255.255.255.192/26 | 192.168.101.1-<br>192.168.101.62 | 192.168.101.63 |
 | Hasta Kayıt | 192.168.101.64 | 255.255.255.192/26 | 192.168.101.64-<br>192.168.101.126 | 192.168.101.127 |
 | Misafir Bekleme Alanı | 192.168.101.128 | 255.255.255.192/26 | 192.168.101.129-<br>192.168.101.190 | 192.168.101.191 |
+
+
+ #### Ankara(Şube) Hastanesi
+ 
+Şube tarafı ip planlaması aşağıdaki gibidir. 30 kullanıcılı olarak /26 subnetmask kullanılmıştır.
+
+| Departmanlar | Network Adresleri | Subnet Mask | Host Adres Aralığı | Broadcast Adresleri |
+| :--- | :--- | :--- | :--- | :--- |
+| Poliklinik(Ank) | 192.168.101.192 | 255.255.255.224/27 | 192.168.101.193-<br>192.168.101.222 | 192.168.101.223 |
+| Laboratuvar(ank) | 192.168.101.224 | 255.255.255.224/27 | 192.168.101.225-<br>192.168.101.254 | 192.168.101.255 |
+| Medikal Cİhazlar(ank) | 192.168.102.0 | 255.255.255.224/27 | 192.168.102.1-<br>192.168.102.30 | 192.168.102.31 |
+| Yönetim(ank) | 192.168.102.32 | 255.255.255.224/27 | 192.168.102.33-<br>192.168.102.62 | 192.168.102.63 |
+| Hasta Kayıt(ank) | 192.168.102.64 | 255.255.255.224/27 | 192.168.102.65-<br>192.168.102.94 | 192.168.102.95 |
+| Misafir Bekleme Alanı(ank) | 192.168.102.96 | 255.255.255.224/27 | 192.168.102.97-<br>192.168.102.126 | 192.168.102.127 |
+
+
+ #### Server Tarafı 
+ 
+Server tarafı ip planlaması
+
+| Departmanlar | Network Adresleri | Subnet Mask | Host Adres Aralığı | Broadcast Adresleri |
+| :--- | :--- | :--- | :--- | :--- |
+| Server | 192.168.102.128 | 255.255.255.240/28 | 192.168.102.129-<br>192.168.102.142 | 192.168.102.143 |
+
+
+
+#### Router ve Layer-3 Sw Arası
+
+|  |  Networkler|
+| :--- | :--- |
+| Merkez Router1 – Şube Router1 | 192.168.102.160/30 |
+| Merkez Router1 – Merkez Router2 | 192.168.102.164/30 |
+| Merkez Router2 – Şube Router2 | 192.168.102.168/30 |
+| Şube Router2 – Şube Router1 | 192.168.102.172/30 |
+
+
+#### ISP'ler ve Routerlar Arası
+
+
+|  | Networkler |
+| :--- | :--- |
+| ISP1 – Merkez Router1 | 80.0.1.0/30 |
+| ISP1 -  Şube Router1 | 80.0.1.4/30 |
+| ISP2 -  Merkez Router1 | 90.0.1.0/30 |
+| ISP2 -  Şube Router1 | 90.0.1.4/30 |
+
+
+
+<img width="1346" height="661" alt="image" src="https://github.com/user-attachments/assets/77400fbd-f513-43d9-b3e9-d79afea8c57e" />
+
+Networkler subnet maskları ile birlikte network dizayna eklendi son görüntü bu şekilde.
+
+
+### 5)  İp Atama Yapılandırmaları
+
+* **L3 Switchlere ip Atama**
+L3 Switch ve router arası portlara ip ataması aşağıdaki gibi yapılır.
+
+<img width="795" height="258" alt="image" src="https://github.com/user-attachments/assets/d555eca1-3c41-443b-b8d9-4199f888f4c2" />
+
+
+L3 switchin portunu girdikten sonra “no swicthport” dedikten sonra ip adresi atayabiliriz. Switch artık bu porttan routing yapabilir vlan gerekmez.  Geriye kalan L3 switchlere de bu komutları yazar ve ip adresi atayabiliriz. 
+
+
+* **Router Ip atamaları**
+
+<img width="659" height="79" alt="image" src="https://github.com/user-attachments/assets/9847cfe5-7f0a-49c6-8c21-abf96e2a515a" />
+
+Routerların bütün interfacelerine  sadece interface ve ip adreslerini değiştirerek ip ataması yapılmıştır.
+
+
+
+
+
+
+
+
 
 
 
