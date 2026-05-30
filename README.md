@@ -296,7 +296,7 @@ Routerların ağdaki en kısa ve en uygun yolu bulmak için kullandığı bir di
 
 Önce l3 swithcleri ospf yapılandırılması yapılandırılacak daha sonra routerlar yapılandırılacaktır.
 
-####L3 swithlere ospf yapılandırması
+#### L3 swithlere ospf yapılandırması
 
 Merkezdeki L3 switchin access swithclere olan ospf yapılandırılmaları olacak. Yani 7 departman ve bir de routera olan bağlantısı var.
 
@@ -341,20 +341,67 @@ Aynı komutlar **merkez-switch2** ye aynısı yapılır sadece router-id ve rout
 
 <img width="457" height="433" alt="image" src="https://github.com/user-attachments/assets/1eb7d5d0-a7cf-4ff9-ba86-a7a6a84fca72" />
 
-şube multilayer switch2 de  aynısı yapılır sadece router-id ve routea bağlanan network değişir.
+Şube multilayer switch2 de  aynısı yapılır sadece router-id ve routea bağlanan network değişir.
+
+
+#### Routerlara OSPF Yapılandırmaları
+
+**Merkez-router1 yapılandırması**
+
+<img width="675" height="240" alt="image" src="https://github.com/user-attachments/assets/5436cfb8-8792-45da-a223-c16c3c014573" />
+
+ISP leri ospf içine dahil etmiyoruz güvenlik sebebinden dolayı. Zaten ISP kabul etmez hello paketleri ve boşuna trafik akar cpu yükü artar.
 
 
 
+**Merkez-router2 yapılandırması**
 
 
+<img width="698" height="203" alt="image" src="https://github.com/user-attachments/assets/c47b200f-ef53-470d-ab4c-da1668e3cca0" />
 
 
+**Şube-router1 yapılandırması**
 
 
+<img width="689" height="266" alt="image" src="https://github.com/user-attachments/assets/ad9f6ae3-55b0-4a79-9776-5fd73be4e2c0" />
 
 
+**Şube-router2 yapılandırması**
 
 
+<img width="705" height="204" alt="image" src="https://github.com/user-attachments/assets/2339acba-5c9f-435b-9291-f9b9b865090f" />
+
+### 7)  Server Cihazlarına Statik Ip Atama
+
+Server tarafının networkü 192.168.102.28/28 tir.
+
+
+| | Ipv4 Adres | Subnet Mask | Default Gateway | DNS Server |
+| :--- | :--- | :--- | :--- | :--- |
+| DHCP Server | 192.168.102.130 | 255.255.255.240 | 192.168.102.129 | 192.168.102.131 |
+| DNS Server | 192.168.102.131 | 255.255.255.240 | 192.168.102.129 | |
+| E-mail Server | 192.168.102.132 | 255.255.255.240 | 192.168.102.129 | 192.168.102.131 |
+| File Server | 192.168.102.134 | 255.255.255.240 | 192.168.102.129 | 192.168.102.131 |
+| Web Server | 192.168.102.133 | 255.255.255.240 | 192.168.102.129 | 192.168.102.131 |
+
+
+<img width="388" height="514" alt="Screenshot 2026-05-30 234609" src="https://github.com/user-attachments/assets/1753651c-cbcc-4804-97ae-058e3507cdb0" />
+
+
+### 8) DHCP Server da Pool Oluşturma
+
+Merkez network ve Ş ube network toplam 13 tane pool oluşturduk. 13 tane departmana dinamik olarak Ip adresi verecek bu dhcp server. 
+		
+
+<img width="741" height="511" alt="image" src="https://github.com/user-attachments/assets/c89f680c-28fd-4856-ace3-a0244f5b5d7b" />
+
+
+### 9)Inter-VLAN Routing ve İp dhcp Helper Adres 
+
+
+* **Inter-VLAN Routing;** Farklı VLAN'larda yer alan ve Katman 2'de  birbirinden tamamen izole edilmiş olan cihazların, birbirleriyle iletişim kurmasını sağlayan yönlendirme işlemidir.
+
+* **Ip Helper Adres;** DHCP isteklerini başka bir ağdaki DHCP sunucusuna yönlendirmek için kullanılır. DHCP isteği (broadcast) VLAN dışına çıkamaz. Router / L3 Switch bu isteği unicast olarak DHCP server’a yollar 
 
 
 
