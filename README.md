@@ -288,6 +288,65 @@ L3 switchin portunu girdikten sonra “no swicthport” dedikten sonra ip adresi
 Routerların bütün interfacelerine  sadece interface ve ip adreslerini değiştirerek ip ataması yapılmıştır.
 
 
+### 6)  OSPF Yapılandırmaları
+
+#### OSPF Nedir?
+
+Routerların ağdaki en kısa ve en uygun yolu bulmak için kullandığı bir dinamik yönlendirme protokolüdür. En iyi yolu belirlemek için cost (maliyet) değerini kullanır. Ağ değişikliklerine hızlı adapte olur.
+
+Önce l3 swithcleri ospf yapılandırılması yapılandırılacak daha sonra routerlar yapılandırılacaktır.
+
+####L3 swithlere ospf yapılandırması
+
+Merkezdeki L3 switchin access swithclere olan ospf yapılandırılmaları olacak. Yani 7 departman ve bir de routera olan bağlantısı var.
+
+**Merkez Multilayer Switch1**
+
+<img width="728" height="480" alt="image" src="https://github.com/user-attachments/assets/384d2931-5043-4c27-a619-75b50a46ca74" />
+
+
+**ip routing:** Komutu ile cihazın IP paketlerini yönlendirmesi  sağlanmıştır.Bu ağları OSPF ile l3 switchte tanıttık l3 switch bu bilgileri merkez router1 e söyler bu sayede bu vlanlar başka ağlara ulaşabilir serverlara ulaşabilir ve internete çıkabilir. 
+
+**router ospf 10:** Komutu çalıştırılarak OSPF yönlendirme süreci (Process ID: 10) yerel olarak başlatılmıştır.
+
+**Ağ Adresi ve Wildcard Mask Eşleşmesi:** Ekrandaki 192.168.100.0 0.0.0.63 ifadesi, /26 subnet maskesine (255.255.255.192) sahip olan yerel alt ağı temsil eder. OSPF geleneksel subnet mask yerine Wildcard Mask  kullanır. Cihaz bu maske yardımıyla hangi interfacelerin OSPF paketleri göndereceğini ve hangi ağ segmentlerini dışarıya ilan edeceğini belirler.
+
+**ip route**: “Ip route  0.0.0.0 0.0.0.0 192.168.102.146” komutu ile switchin bilmediği tüm adresler için gideceği son kapıyı belirlemek içindir. Bir kullanıcı ağda tanımlı olmayan bir ip'ye gitmeye çalıştığında switch “bu adresi tanımıyorum” diyerek çöpe atar işte burada default route devreye girer. Default route switchin bilmediği ip'yi merkez router1'e gönderir. Yapılmazsa departmanlar kendi aralarında konuşur inter-vlan routing ile ama merkez router1'in arkasına ulaşamaz.
+
+
+<img width="788" height="178" alt="image" src="https://github.com/user-attachments/assets/09bd1032-b37e-4cea-9fa7-98dbd044597b" />
+
+
+**Router-id:** bir OSPF ağındaki her yönlendiricinin (veya L3 switch'in) sahip olduğu benzersiz bir kimlik numarasıdır. 
+
+**passive-interface:** komutu ise vlanları pasif olarak işaretledik çünkü ospf hello paketleri göndermeyi durdurur ama interfascedeki ağ bilgisini diğer routerlara (merkez router1'e) duyurmaya devam eder. Kullanım nedeni gereksiz trafik oluşmasını durdurmak,güvenlik ve cpu yükünü azaltmaktır.
+
+Aynı komutlar **merkez-switch2** ye aynısı yapılır sadece router-id ve routea bağlanan network değişir.
+
+**Merkez Multilayer Switch2**
+
+<img width="467" height="461" alt="image" src="https://github.com/user-attachments/assets/989d77ef-8139-4836-bec7-b07f44347f79" />
+
+
+**Şube Multilayer Switch1**
+
+
+<img width="756" height="323" alt="image" src="https://github.com/user-attachments/assets/1f395ffc-4e63-4af0-b831-8a6f166aaa13" />
+
+Şube multilayer switcht1de  de bunları yazıyoruz
+
+
+**Şube Multilayer Switch2**
+
+
+<img width="457" height="433" alt="image" src="https://github.com/user-attachments/assets/1eb7d5d0-a7cf-4ff9-ba86-a7a6a84fca72" />
+
+şube multilayer switch2 de  aynısı yapılır sadece router-id ve routea bağlanan network değişir.
+
+
+
+
+
 
 
 
