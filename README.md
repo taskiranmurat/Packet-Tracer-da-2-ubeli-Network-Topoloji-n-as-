@@ -1,4 +1,4 @@
-# Packet-Tracer-da-2-Şubeli-Network-Topoloji-İnşası
+# Packet Tracer da 2 Şubeli NetworkTopoloji İnşası
 
 
 ### Proje Amacı
@@ -52,7 +52,7 @@ Hastanenin operasyonel sürekliliğini sağlamak adına çift ISP bağlantılı 
 * Daha önce belirtildiği gibi, network maliyeti için her sitede bir adet core router iki adet multilayer switch ve her departmanı bağlayan access switch bulunması beklenmektedir.
 * Her departmanın kullanıcılar için bir wireless network olması gerekmektedir.
 * Merkezde (HQ) her departmanda yaklaşık 40-60 kullanıcı, şubede (Branch) ise yaklaşık 20-30 kullanıcı olduğu varsayılmaktadır.
-* Her departman farklı bir VLAN’da ve farklı bir alt ağda (subnetwork) yer almalıdır.
+* Her departman farklı bir VLAN’da ve farklı bir alt ağda  yer almalıdır.
 * 192.168.100.0 temel ağı verilmiştir; her departmana doğru sayıda IP adresi tahsis edebilmek için subnetting işlemini gerçekleştirin.
 * Hastane ağı, iki internet servis sağlayıcısına bağlı olan statik, genel IP adreslerine  sahiptir.
 * Hostname ayarları, konsol parolası, enable parolası, banner mesajları gibi temel cihaz ayarlarını yapılandırın ve IP domain lookup özelliğini devre dışı bırakın.
@@ -65,7 +65,9 @@ Hastanenin operasyonel sürekliliğini sağlamak adına çift ISP bağlantılı 
 * Uzaktan erişim için tüm yönlendiricilerde ve katman 3 anahtarlarda SSH yapılandırın.
 * Sunucu departmanındaki access switch için port-security yapılandırın: bir switch portuna yalnızca bir cihazın bağlanmasına izin verin, MAC adresini sticky yöntemiyle öğrenin ve ihlal (violation) modu olarak shutdown kullanın.
 * İlgili çıkış yönlendirici arayüzünün IPv4 adresini kullanacak şekilde PAT yapılandırın ve gerekli ACL kuralını uygulayın.
-* İletişimi test edin ve yapılandırılan her şeyin beklendiği gibi çalıştığından emin olun.
+* HSRP yapılandırın.
+* Etherchannel yapılandırın.
+* STP ve Port Securty yapılandırılmalı.
 
 
 
@@ -82,6 +84,9 @@ Hastanenin operasyonel sürekliliğini sağlamak adına çift ISP bağlantılı 
 9. Inter-VLAN routing yapılandırılacak ve ip dhcp helper adresleme yapılandırılacak
 10. Wireless network yapılandırılacak
 11. PAT ve ACL yapılandırılacak
+12. HSRP yapılandırılacak
+13. Etherchannel yapılandırılacak
+14. STP ve Port Security yapılandırılacak ve STP ve HSRP aligment yapılandırılacak
 
 
 ### 1) Network Dizaynı oluşturuldu. Bütün bağlantılar yapıldı.
@@ -396,12 +401,260 @@ Merkez network ve Ş ube network toplam 13 tane pool oluşturduk. 13 tane depart
 <img width="741" height="511" alt="image" src="https://github.com/user-attachments/assets/c89f680c-28fd-4856-ace3-a0244f5b5d7b" />
 
 
-### 9)Inter-VLAN Routing ve İp dhcp Helper Adres 
+### 9) Inter-VLAN Routing ve İp dhcp Helper Adres 
+
+#### Inter-VLAN Routing
+Farklı VLAN'larda yer alan ve Katman 2'de  birbirinden tamamen izole edilmiş olan cihazların, birbirleriyle iletişim kurmasını sağlayan yönlendirme işlemidir. Temel olarak 3 farklı yönteme ayrılır:
+##### 1. Geleneksel Inter-VLAN Routing (Legacy)
+Bu yöntem, VLAN teknolojisinin ilk dönemlerinde kullanılan eski ve maliyetli bir yaklaşımdır.
+
+* **Çalışma Mantığı:** Switch üzerindeki her bir VLAN için, Router üzerinde ayrı bir fiziksel port ayrılır. Örneğin, ağda 3 tane VLAN varsa, switch'ten router'a 3 ayrı fiziksel kablo çekilir.
+* **Dezavantajı:** Ağdaki VLAN sayısı arttıkça router üzerindeki fiziksel portlar hızla tükenir ve kablo maliyeti çok ciddi oranda artar. Günümüz modern ağlarında neredeyse hiç kullanılmaz.
+
+---
+
+##### 2. Router-on-a-Stick (RoaS)
+Geleneksel yöntemin port israfı ve maliyet sorununu çözmek için geliştirilen, orta ve küçük ölçekli ağlarda sıklıkla tercih edilen yöntemdir.
+
+* **Çalışma Mantığı:** Switch ile Router arasında tek bir fiziksel kablo çekilir ve bu hat Trunk olarak ayarlanır. Router'ın o tek fiziksel portu, yazılımsal olarak her VLAN için subinterface (alt arayüz) adı verilen sanal parçalara bölünür.
+* **Avantajı:** Router üzerinde sadece tek bir fiziksel port kullanıldığı için donanım maliyetini minimuma indirir.
+
+---
+
+##### 3. Katman 3 (Multilayer) Switch ile Yönlendirme (SVI)
+Büyük kurumsal ağlarda, yüksek performans ve hız gereksinimleri için kullanılan en modern ve en yaygın yöntemdir.
+
+* **Çalışma Mantığı:** Araya harici bir router koymak yerine, yönlendirme işlemi hem anahtarlama (switching) hem de yönlendirme (routing) yapabilen Layer 3 Switch üzerinde gerçekleştirilir. Her VLAN için switch içinde SVI (Switched Virtual Interface) adı verilen sanal yönlendirme arayüzleri oluşturulur ve IP'ler buralara tanımlanır.
+* **Avantajı:** Veri trafiği harici bir cihaza (router'a) gidip gelmek zorunda kalmaz. Yönlendirme işlemi doğrudan switch'in donanımsal chipleri (ASIC) üzerinde, hat hızında (wire-speed) gerçekleştiği için performans maksimumdur ve darboğaz yaşanmaz.
+  
+
+#### Ip Helper Adres
+DHCP isteklerini başka bir ağdaki DHCP sunucusuna yönlendirmek için kullanılır. DHCP isteği (broadcast) VLAN dışına çıkamaz. Router / L3 Switch bu isteği unicast olarak DHCP server’a yollar 
+
+---
+
+-Önce server tarafında routerı router-on-a-stick yapıcaz vlan 80 için çünkü bu dhcp ile iletişim kurup hostlar ip alabilsin.
+
+<img width="673" height="608" alt="image" src="https://github.com/user-attachments/assets/55ea0d44-a159-408a-83b0-d9ca29409ee6" />
+
+Routerın L2 switch tarafındanki interface gig0/0'dır. Bu interface'in fiziksel ip adresi olmamalı. Sub-interface yapılandırıcaz ve bu sub-interface ile routing yapılır.
+	
+<img width="791" height="398" alt="image" src="https://github.com/user-attachments/assets/23df1fdd-96c9-4f7b-94ef-dfa04a2d4732" />
 
 
-* **Inter-VLAN Routing;** Farklı VLAN'larda yer alan ve Katman 2'de  birbirinden tamamen izole edilmiş olan cihazların, birbirleriyle iletişim kurmasını sağlayan yönlendirme işlemidir.
+* **no ip address:** Router-on-a-Stick mimarisinde, switch'e bağlanan ana fiziksel portun kendisine doğrudan bir IP adresi verilmez (varsa silinir). Çünkü bu port mantıksal olarak alt parçalara bölünecektir.
 
-* **Ip Helper Adres;** DHCP isteklerini başka bir ağdaki DHCP sunucusuna yönlendirmek için kullanılır. DHCP isteği (broadcast) VLAN dışına çıkamaz. Router / L3 Switch bu isteği unicast olarak DHCP server’a yollar 
+* **interface GigabitEthernet0/0:** İşlem yapılacak olan ana fiziksel arayüze (Gi0/0) geçiş yapılmıştır.
+
+* **interface GigabitEthernet0/0.80:** Fiziksel portun arkasına .80 konularak sanal bir alt arayüz oluşturulmuş ve subinterface konfigürasyon moduna (config-subif) geçilmiştir. Buradaki 80 sayısı genellikle karışıklığı önlemek için hedef VLAN ID ile aynı seçilir.
+
+* **encapsulation dot1q 80:** Bu alt arayüzün IEEE 802.1Q trunking protokolünü kullanacağı ve VLAN 80'e ait veri paketlerini sırtlayacağı (etiketleyeceğini/çözeceğini) belirtir.
+
+
+* **ip address 192.168.102.129 255.255.255.240:** VLAN 80 alt ağında bulunan cihazların (ağdaki server'ların) iletişim kurabilmesi için varsayılan Ağ Geçidi (Default Gateway) IP adresi ve /28 subnet maskesi bu alt arayüze tanımlanmıştır
+
+
+Routerın sub-interface yapılandırıldı ip adresi 192.168.102.129 255.255.255.240 ile routing yapılacak.
+
+---
+
+
+-Şimdi L3-switchin sub-interfacelerini oluşturacağız. Önce merkez tarafındaki L3-switchleri yapılandırıcağız.
+
+
+**Merkez-multilayer switch 2**
+
+<img width="447" height="619" alt="image" src="https://github.com/user-attachments/assets/c86bf8c3-7f7b-4626-b401-1c8d62fda9a1" />
+
+* **interface vlan [10-70]:** Belirtilen VLAN numaraları için Katman 3 seviyesinde sanal arayüzler (SVI) oluşturulmuştur. Bu arayüzler, o VLAN'daki cihazların birbiriyle konuşmasını sağlayan Inter-VLAN Routing yapısının temelidir.
+
+
+* **ip address ... 255.255.255.192:** Her bir VLAN arayüzüne, o alt ağın  Default Gateway IP adresi tanımlanmıştır.
+
+* **ip helper-address 192.168.102.130:** Bu komut ilgili VLAN'lardan gelen DHCP isteklerini broadcast'ten çıkartıp Unicast paketine dönüştürür ve doğrudan 192.168.102.130 IP adresli merkezi DHCP Sunucusuna iletir
+
+
+**Merkez-multilayer switch 1**
+
+<img width="448" height="605" alt="image" src="https://github.com/user-attachments/assets/496b9e22-be8a-4ee5-abf0-a8ae0c7f9e55" />
+
+
+**Şube-multilayer switch 1**
+
+
+<img width="449" height="521" alt="image" src="https://github.com/user-attachments/assets/dae8b69c-d47e-4d98-9f58-893fd8f0bc42" />
+
+
+**Şube-multilayer switch 2**
+
+
+<img width="447" height="518" alt="image" src="https://github.com/user-attachments/assets/05a67139-e489-4e1e-9cb3-8571d21cc3e4" />
+
+
+
+### 10) Access Pointlerin Yapılandırılması 
+
+**Merkez Access Point Yapılandırması**
+
+| | SSID | PASSWORD |
+| :--- | :--- | :--- |
+| Poliklinik Dept. | POL-AP | POL-AP12345 |
+| Laboratuvar Dept. | LAB-AP | LAB-AP12345 |
+| Medikal Cihazlar Dept. | MED-AP | MED-AP12345 |
+| Yönetim-Finans Dept. | FINANS-AP | FINANS-AP12345 |
+| IT Departman | IT-AP | IT-AP12345 |
+| Hasta Kayıt Dept. | HASTA-K.AP | HASTA-K.AP1 |
+| Misafir Dept. | MISAFIR-AP | MISAFIR-AP1 |
+
+
+**Şube Access Point Yapılandırması**
+
+
+| | SSID | PASSWORD |
+| :--- | :--- | :--- |
+| Poliklinik(Ank.) Dept. | POLANK-AP | POLANK-AP1 |
+| Laboratuvar(Ank.) Dept. | LABANK-AP | LABANK-AP1 |
+| Medikal Cihazlar(Ank.) Dep. | MEDANK-AP | MEDANK-AP1 |
+| Yönetim Küçük(Ank.) Dept. | FINANK-AP | FINANK-AP1 |
+| Hasta Kayıt(Ank.) Dept. | HASANK-AP | HASANK-AP1 |
+| Misafir Dept.(Ank.) | MiSANK-AP | MiSANK-AP1 |
+
+
+
+<img width="1337" height="657" alt="image" src="https://github.com/user-attachments/assets/5a9c6e8c-051c-4f02-8962-5f156db45527" />
+
+
+Networkün genel hali bu şekildedir. Bütün AP'ler yapılandırıldı. Laptoplar ve smartphonelar kendi departmanındaki  AP'lere bağlanmıştır.
+
+
+### 11) PAT ve ACL Yapılandırması
+
+
+* **PAT (Port Address Translation - Port Adres Dönüştürme)**
+
+Yerel bir ağda bulunan çok sayıda cihazın (rivate IP adresi kullanan sadece tek bir genel (public) IP adresi üzerinden internete çıkmasını sağlayan bir Network Address Translation (NAT) türüdür. İç ağdaki cihazların IP adresleri internette yönlendirilemez . PAT bu cihazlardan gelen paketlerin kaynak IP adresini dış bacakta bulunan tek public IP adresi ile değiştirir.
+
+* **ACL (Access Control List - Erişim Kontrol Listesi)**
+
+Router veya Layer 3 switch gibi ağ cihazları üzerinden geçen veri paketlerini filtrelemek (izin vermek veya engellemek) için kullanılan bir dizi kural tablosudur. Ağ güvenliğini sağlamak ve trafiği denetlemek amacıyla kurulan bir dijital kontrol noktasıdır. Laboratuvar ve Medikal Cihazlar departmanın internete çıkmasına gerek yok onlara acl uygulayacağız.
+
+
+-Önce routerlar da outside ve inside portları belirliyeceğiz. ISP'ye bakan portlar outside multilayer switchlere bakan portlar da inside olacak.
+
+**Merkez-Router1**
+
+<img width="155" height="190" alt="image" src="https://github.com/user-attachments/assets/8450460b-2859-461f-b9d0-a17baed8a2c1" />
+
+Daha sonra ip nat overload yapıcaz.
+
+<img width="762" height="13" alt="image" src="https://github.com/user-attachments/assets/6e9f424c-ba1e-458b-9f3e-f1d06f067a58" />
+
+Bu komut bize İç ağdan gelip internete çıkmak isteyen ve Access List 1 içindeki kurallara uyan tüm yerel cihazları al, hepsinin kaynak IP adresini dış bacağımız olan serial0/1/0 arayüzünün IP adresine dönüştür. Paketlerin birbirine karışmaması için de her birine benzersiz birer port numarası ata (overload) der.
+
+---
+
+Şimdi de Acl list 1 oluşturup hangi networklerin dışarı çıkmasını istediklerimizi belirliyeceğiz. Laboratuvar ve Medikal Cihazlar departmanın internete çıkmasına gerek yok onları list 1 eklemeyeceğiz. 
+
+
+<img width="637" height="120" alt="image" src="https://github.com/user-attachments/assets/ed66d26a-d03e-4bb0-99cb-af3b9374bbde" />
+
+Laboratuvar(192.168.100.64) ve Medikal Cihazlar(192.168.100.128) departmanını eklemedik. 
+
+
+**Şube-Router1**
+
+
+<img width="150" height="189" alt="image" src="https://github.com/user-attachments/assets/48225dfb-22e0-47dd-9d8b-bb9d64976548" />
+
+
+<img width="590" height="20" alt="image" src="https://github.com/user-attachments/assets/70153084-bf4d-45b2-bfdb-aa1e90c50d15" />
+
+
+En sonda ise acl list 1 oluşturup istediğimiz networklere izin vericez. Laboratuvar ve Medikal Cihazlar deparmanına izin vermicez.
+
+<img width="665" height="116" alt="image" src="https://github.com/user-attachments/assets/372b42b3-77a0-498f-99e5-cd92788205d3" />
+
+
+**Merkez-Router2**
+
+<img width="156" height="251" alt="image" src="https://github.com/user-attachments/assets/47388fec-4b10-4c9d-a972-5219f3bd5c92" />
+
+
+<img width="528" height="22" alt="image" src="https://github.com/user-attachments/assets/e326dc80-58e5-4612-b3d7-ebd8eb752755" />
+
+Acl list 1 oluşturucaz ve merkez-router2'den Laboratuvar ve Medikal Cihazların departmanlarını internete çıkarmak istemiyoruz.
+
+<img width="660" height="102" alt="image" src="https://github.com/user-attachments/assets/7fba5fbd-4b15-46b7-ae87-20361cb5d52e" />
+
+
+**Şube-Router2**
+
+<img width="160" height="185" alt="image" src="https://github.com/user-attachments/assets/05ccb0c8-4881-42da-afcc-c8fd58109fe4" />
+
+
+<img width="529" height="19" alt="image" src="https://github.com/user-attachments/assets/649edb58-37ae-40fa-baa6-68f6978dece0" />
+
+
+### 12) ETHERCHANNEL 
+
+Birden fazla fiziksel Ethernet hattını (kabloyu) mantıksal olarak birleştirerek tek bir yüksek hızlı hat  gibi çalıştırma teknolojisidir
+
+<img width="141" height="364" alt="Screenshot 2026-06-01 135540" src="https://github.com/user-attachments/assets/6dee40a9-3ff1-4a47-b635-72968f467962" />
+
+
+İki multilayer switch arasına 4 fiziksel kablo çektim ethechannel oluşturmak için. 
+
+<img width="370" height="237" alt="image" src="https://github.com/user-attachments/assets/a0be8e87-4fc9-4cbe-a154-c981e318020b" />
+
+Şube multilayer ve şube multileyer switchlerde de aynı portlar da oluşturudum  ve etherchannel yapılandırıldı.
+
+
+### 13) HSRP Yapılandırması	 
+
+Bir Katman 3 yedeklilik protokolüdür. Ağdaki istemci cihazların (PC, Server vb.) internete veya farklı ağlara çıkarken kullandıkları Varsayılan Ağ Geçidini donanımsal olarak yedeklemek amacıyla kullanılır. Ana cihazın öncelik değerini (priority) yüksek tutarak onun "Active" rolünü üstlenmesini sağlarız.
+
+#### HSRP Nasıl Çalışır ve Rolleri Nelerdir?
+HSRP yapılandırmasında cihazlar kendi aralarında "Hello" paketleri göndererek belirli rollere bürünürler:
+
+* **Active Router :** Sanal IP adresine gelen tüm veri trafiğini fiilen sırtlayan ve yönlendiren ana cihazdır.
+
+* **Standby Router :** Aktif cihazı sürekli dinleyen yedek cihazdır. Aktif router'dan belirli bir süre (Hold Time - varsayılan 10 saniye) boyunca sinyal gelmezse, onun çöktüğünü anlar ve milisaniyeler içinde trafiği kesintisiz bir şekilde üzerine alır.
+
+* **Virtual Router :** Fiziksel olarak var olmayan, tamamen yazılımsal olan yapıdır. Ağdaki istemcilere (PC'lere) gateway olarak bu sanal cihazın IP adresi girilir.
+
+
+**Merkez tarafındaki stand by router**
+
+<img width="331" height="642" alt="image" src="https://github.com/user-attachments/assets/6cceb76e-2862-43c5-bde7-e94208f507cf" />
+
+Bu standby router için yaptık priority değerini 100 verdim active router da priority değeri 110 verildi.
+
+
+**Şube tarafındaki active router**
+
+<img width="362" height="641" alt="image" src="https://github.com/user-attachments/assets/a914db1c-9aed-4935-a7ac-db91486a9196" />
+
+Bu active için yaptık priority değerini 110 verdim stand by router için  priority değeri 100 verildi.
+
+
+### 14) STP ve Port Security Yapılandırması(HSRP STP aligment)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
