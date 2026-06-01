@@ -640,24 +640,70 @@ Bu active için yaptık priority değerini 110 verdim stand by router için  pri
 ### 14) STP ve Port Security Yapılandırması(HSRP STP aligment)
 
 
+#### STP Nedir? 
+
+STP (Spanning Tree Protocol) yerel ağlarda (LAN) yedekli kablolama yapıldığında meydana gelebilecek "Network Loop"  oluşumunu engellemek için geliştirilmiş bir Katman 2 protokolüdür.
+
+Ağda kesintisiz bağlantı sağlamak amacıyla switch'ler birbirine birden fazla kablo ile (yedekli) bağlanır. Ancak Katman 2 seviyesindeki Ethernet paketlerinde (örneğin Broadcast paketlerinde) TTL (Time to Live) değeri bulunmaz. Bu yüzden döngüye giren bir paket ağ üzerinde sonsuza kadar dönmeye başlar. Bu durum Broadcast fırtınalarına , MAC adresi tablolarının altüst olmasına ve sonuç olarak tüm ağın kilitlenmesine yol açar.
+
+* **Nasıl Çalışır?**
+  
+STP ağdaki switch'ler arasından bir adet lider switch seçer, buna Root Bridge denir. Root Bridge seçildikten sonra tüm switch'ler ona giden en kısa yolları hesaplar. Döngüye sebep olan alternatif (yedek) hatların portları yazılımsal olarak "Blocking" ( moduna alınarak kapatılır. Ana hatlardan biri koptuğunda engellenen port otomatik olarak "Forwarding" (İletim) moduna geçer ve ağ kesintisiz çalışmaya devam eder.
+
+
+En hızlı olan spanning tree rapid-pvst bütün switchlere **“spanning-tree mode rapid-pvst”** komutunu aktif edildi.
+
+Merkez-multilayersw1  vlan 10,20,30 vlanların geçmesini ve merkez-multilayersw2den' de vlan 40,50,60  ve 70 vlanlarının geçmesini istiyoruz hsrp stp aligment yapıyoruz.
+Bunun için priorityleri değiştircez merkez-multilayersw1 de vlan 10,20.30 vlanlarının prioritylerini artırıcaz. Daha sonra
+
+```bash
+spanning-tree vlan 10,20,30 root primary
+spanning-tree vlan 40,50,60,70 root secondary
+```		
+
+bu komutları yazıcaz.
+
+
+<img width="261" height="213" alt="image" src="https://github.com/user-attachments/assets/6314b9f5-a6f8-4438-b270-e3bc1983fbcc" />
 
 
 
+Şubede ise 90,100 ve 110 vlanları şube-sw1 den geçecek şekilde ayarladım 120,130,140 da şube sw2 den geçecek.
 
+```bash
+spanning-tree vlan 90,100,120 root primary
+spanning-tree vlan 110,120,130 root secondary
+```		
 
+<img width="259" height="195" alt="image" src="https://github.com/user-attachments/assets/0c35a1d1-61e1-489d-97ec-4527e9d49ded" />
 
+---
 
+### Port Security Nedir?
 
+Bir switch'in fiziksel portlarına hangi cihazların bağlanabileceğini MAC adreslerine bakarak kontrol eden bir Katman 2 güvenlik özelliğidir.Şirket içindeki açık bir network prizine yetkisiz bir kişinin kendi bilgisayarını takmasını veya bir porttan ağa binlerce sahte MAC adresi göndererek switch'in hafızasını kilitlemeyi amaçlayan saldırıları (MAC Flooding) engellemek için kullanılır.
 
+```bash
+interface range f0/3 - 24
+ 		switchport mode access
+ 		spanning-tree portfast
+		 spanning-tree bpduguard enable
+ 		switchport port-security
+ 		switchport port-security maximum 1
+ 		switchport port-security mac-address sticky
+ 		switchport port-security violation shutdown
+		end
 
+```	
+Tüm access switchlere bu komutlar yazılacaktır. Port Security sadece uç cihazların(Pc vb.) bağlı olduğu Access portlarında uygulanabilir. Trunk portlarında çalışmaz.
 
+* **spanning-tree portfast:** Bilgisayar takıldığında portun 30-50 saniye beklemek yerine anında aktif (Forwarding) olmasını sağlar.
 
+* **spanning-tree bpduguard enable:** Bu porta yanlışlıkla veya kaçak olarak başka bir switch takılıp ağda döngü (loop) yaratılmaya çalışılırsa, port bunu anlar ve kendini otomatik kapatır
+* **switchport port-security:** Portta MAC adresi tabanlı güvenliği aktif eder.
 
+* **switchport port-security maximum 1:** Porta aynı anda en fazla 1 cihaz bağlanmasına izin verir.
 
+* **switchport port-security mac-address sticky:** Porta takılan ilk cihazın MAC adresini otomatik öğrenir ve hafızaya kaydederek o cihazı porta zimmetler.
 
-
-
-
-
-
-
+* **switchport port-security violation shutdown:** İzinli cihaz sökülüp yerine yabancı bir cihaz takılırsa, switch güvenliği korumak için portu tamamen kapatır
